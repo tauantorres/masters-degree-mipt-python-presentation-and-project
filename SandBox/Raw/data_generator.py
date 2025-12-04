@@ -1,5 +1,5 @@
 import random
-from typing import Dict, Any
+from typing import List, Dict, Any
 
 
 class GeneratorAddress:
@@ -101,6 +101,6 @@ class Generator:
         return GeneratorUser.generate_random_user(user_id=user_id, add_addres=add_address)
 
 
-def generate_users_batch(batch_size: int, add_address: bool = False) -> Dict[int, Dict[str, Any]]:
+def generate_users_batch(batch_size: int, add_address: bool = False) -> List[Dict[str, Any]]:
     return [Generator.generate_user(user_id=i, add_address=add_address) for i in range(1, batch_size + 1)]
 
