@@ -1,0 +1,175 @@
+import os
+import streamlit as st
+import requests
+from components.results_viz import ResultsViz
+from components.benchmark_ui import BenchmarkUI
+
+# Page configuration
+st.set_page_config(
+    page_title="Data Framework Benchmark",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Initialize all session state variables first
+if 'api_url' not in st.session_state:
+    st.session_state.api_url = "http://127.0.0.1:8000"
+if 'api_tested' not in st.session_state:
+    st.session_state.api_tested = False
+if 'api_connected' not in st.session_state:
+    st.session_state.api_connected = False
+if 'benchmark_running' not in st.session_state:
+    st.session_state.benchmark_running = False
+
+# App title and description
+st.title("📊 Data Framework Performance Benchmark")
+st.markdown("""
+This app compares the performance of different Python data frameworks:
+- **Dataclasses** (Python standard library)
+- **Pydantic** (Data validation and settings management)
+- **msgspec** (Fast serialization library)
+""")
+
+# Sidebar configuration
+st.sidebar.title("⚙️ Configuration")
+
+# Simple API URL input without complex session state management
+api_url = st.sidebar.text_input(
+    "API URL",
+    value="http://127.0.0.1:8000",
+    help="Backend API URL"
+)
+
+# Test API connection function
+def test_api_connection(url: str) -> bool:
+    try:
+        response = requests.get(f"{url}/health", timeout=5)
+        return response.status_code == 200
+    except:
+        return False
+
+# Test connection
+is_connected = test_api_connection(api_url)
+
+if is_connected:
+    st.sidebar.success("✅ API Connected")
+else:
+    st.sidebar.error("❌ API Disconnected")
+    st.error(f"Cannot connect to API at {api_url}. Please make sure the backend is running.")
+    st.info("💡 **Start backend:** Run `./start_backend.sh` in another terminal")
+    st.stop()
+
+# Initialize components
+benchmark_ui = BenchmarkUI(api_url)
+results_viz = ResultsViz()
+
+# Main content
+tab1, tab2 = st.tabs(["🚀 Benchmark", "📈 Results Analysis"])
+
+with tab1:
+    st.header("🚀 Run Benchmarks")
+    
+    # Benchmark parameters
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        batch_size = st.slider(
+            "Number of objects",
+            min_value=10,
+            max_value=10000,
+            value=1000,
+            step=10,
+            help="Number of data objects to create and serialize"
+        )
+    
+    with col2:
+        iterations = st.slider(
+            "Iterations",
+            min_value=1,
+            max_value=50,
+            value=10,
+            help="Number of iterations for more accurate timing"
+        )
+    
+    # Benchmark buttons
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("⚡ Quick Benchmark", key="quick_btn"):
+            with st.spinner("Running quick benchmark..."):
+                results = benchmark_ui.run_quick_benchmark()
+                if results:
+                    st.session_state.last_results = results
+                    st.success("✅ Quick benchmark completed!")
+                    st.rerun()
+    
+    with col2:
+        if st.button("🔄 Full Benchmark", key="full_btn"):
+            with st.spinner(f"Running full benchmark with {batch_size} objects..."):
+                results = benchmark_ui.run_benchmark(batch_size, iterations)
+                if results:
+                    st.session_state.last_results = results
+                    st.success("✅ Full benchmark completed!")
+                    st.rerun()
+    
+    with col3:
+        if st.button("⚡🔄 Parallel Benchmark", key="parallel_btn"):
+            with st.spinner(f"Running parallel benchmark with {batch_size} objects..."):
+                results = benchmark_ui.run_benchmark_parallel(batch_size, iterations)
+                if results:
+                    st.session_state.last_results = results
+                    st.success("✅ Parallel benchmark completed!")
+                    st.rerun()
+    
+    with col4:
+        if st.button("🗑️ Clear Results", key="clear_btn"):
+            if 'last_results' in st.session_state:
+                del st.session_state.last_results
+                st.success("✅ Results cleared!")
+                st.rerun()
+    
+    # Display latest results
+    if 'last_results' in st.session_state:
+        try:
+            st.divider()
+            st.subheader("📊 Latest Benchmark Results")
+            results_viz.display_results(st.session_state.last_results)
+        except Exception as e:
+            st.error(f"Error displaying results: {str(e)}")
+
+with tab2:
+    st.header("📈 Results Analysis")
+    
+    if 'last_results' in st.session_state:
+        results_viz.display_results(st.session_state.last_results)
+    else:
+        st.info("🎯 Run a benchmark first to see detailed analysis here!")
+        
+        # Show framework information
+        with st.expander("📚 Framework Information"):
+            st.markdown("""
+            ### Dataclasses
+            - **Type**: Python standard library (3.7+)
+            - **Features**: Type hints, automatic methods, immutability option
+            - **Best for**: Simple data structures without validation
+            
+            ### Pydantic
+            - **Type**: Third-party validation library (v2.x)
+            - **Features**: Data validation, JSON schema, FastAPI integration
+            - **Best for**: APIs requiring data validation and serialization
+            
+            ### msgspec
+            - **Type**: High-performance serialization library (0.18+)
+            - **Features**: Multiple formats, schema validation, extreme speed
+            - **Best for**: High-performance applications requiring fast serialization
+            """)
+
+# Footer
+st.divider()
+st.markdown("""
+<div style='text-align: center; color: #666; font-size: 0.9em;'>
+    🐍 Built with FastAPI + Streamlit | 
+    📊 Comparing Dataclasses vs Pydantic vs msgspec
+</div>
+""", unsafe_allow_html=True)
