@@ -1,15 +1,15 @@
-import os
-import streamlit as st
 import requests
+import streamlit as st
 from components.results_viz import ResultsViz
 from components.benchmark_ui import BenchmarkUI
+
 
 # Page configuration
 st.set_page_config(
     page_title="Data Framework Benchmark",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 # Initialize all session state variables first

@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: benchmark_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DOCKER_ENV=1
+    command: python backend/main.py
+    volumes:
+      - .:/app
+    networks:
+      - benchmark_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: .
+    container_name: benchmark_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - DOCKER_ENV=1
+    command: streamlit run frontend/main.py --server.port=8501 --server.address=0.0.0.0
+    volumes:
+      - .:/app
+    networks:
+      - benchmark_network
+    depends_on:
+      backend:
+        condition: service_healthy
+
+networks:
+  benchmark_network:
+    driver: bridge
+
+volumes:
+  app_data:
