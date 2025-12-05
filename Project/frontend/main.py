@@ -168,7 +168,7 @@ with tab1:
         try:
             st.divider()
             st.subheader("📊 Latest Benchmark Results")
-            results_viz.display_results(st.session_state.last_results)
+            results_viz.display_results(st.session_state.last_results, key_prefix="bench_")
         except Exception as e:
             st.error(f"Error displaying results: {str(e)}")
             st.write("Debug - results data:", st.session_state.last_results)
@@ -177,7 +177,7 @@ with tab2:
     st.header("📈 Results Analysis")
     
     if 'last_results' in st.session_state:
-        results_viz.display_results(st.session_state.last_results)
+        results_viz.display_results(st.session_state.last_results, key_prefix="analysis_")
     else:
         st.info("🎯 Run a benchmark first to see detailed analysis here!")
         

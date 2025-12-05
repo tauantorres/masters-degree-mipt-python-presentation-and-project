@@ -13,7 +13,7 @@ class ResultsViz:
     def __init__(self: Self) -> None:
         pass
 
-    def display_results(self: Self, results: Dict[str, Any]) -> None:
+    def display_results(self: Self, results: Dict[str, Any], key_prefix: str = "") -> None:
 
         if 'results' not in results:
             st.error("No results to display.")
@@ -29,11 +29,11 @@ class ResultsViz:
             st.metric("Iterations", value=params.get('iterations', 'N/A'))
         st.markdown("---")
 
-        self._create_performance_charts(results=results.get('results', {}))
+        self._create_performance_charts(results=results.get('results', {}), key_prefix=key_prefix)
 
         self._display_summary(summary=results.get('summary', {}))
 
-    def _create_performance_charts(self: Self, results: Dict[str, Any]) -> None:
+    def _create_performance_charts(self: Self, results: Dict[str, Any], key_prefix: str = "") -> None:
 
         try:
             frameworks = list(results.keys())
@@ -53,7 +53,7 @@ class ResultsViz:
                     labels={'x': 'Framework', 'y': 'Avg Serialization Time (ms)'},
                 )
                 fig_ser.update_layout(showlegend=False, height=400)
-                st.plotly_chart(fig_ser, width="stretch")
+                st.plotly_chart(fig_ser, use_container_width=True, key=f"{key_prefix}serialization_chart")
 
             with col2:
                 fig_deser = px.bar(
@@ -65,7 +65,7 @@ class ResultsViz:
                     labels={'x': 'Framework', 'y': 'Avg Deserialization Time (ms)'},
                 )
                 fig_deser.update_layout(showlegend=False, height=400)
-                st.plotly_chart(fig_deser, width="stretch")
+                st.plotly_chart(fig_deser, use_container_width=True, key=f"{key_prefix}deserialization_chart")
 
             fig_mem = px.bar(
                 x=frameworks,
@@ -76,13 +76,14 @@ class ResultsViz:
                 labels={'x': 'Framework', 'y': 'Avg Memory Usage (KB)'},
             )
             fig_mem.update_layout(showlegend=False, height=400)
-            st.plotly_chart(fig_mem, width="stretch")
+            st.plotly_chart(fig_mem, use_container_width=True, key=f"{key_prefix}memory_chart")
 
             self._create_radar_chart(
                 frameworks=frameworks,
                 memory_usages=memory_usages,
                 serialization_times=serialization_times,
                 deserialization_times=deserialization_times,
+                key_prefix=key_prefix,
             )
 
         except Exception as e:
@@ -103,6 +104,7 @@ class ResultsViz:
         serialization_times: List[float],
         deserialization_times: List[float],
         memory_usages: List[float],
+        key_prefix: str = "",
     ) -> None:
         
         try:
@@ -136,7 +138,7 @@ class ResultsViz:
                 showlegend=True,
                 title="🎯 Overall Framework Performance Comparison (Higher is Better)",
             )
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True, key=f"{key_prefix}radar_chart")
 
         except Exception as e:
             st.warning(f"Could not create radar chart: {str(e)}")
